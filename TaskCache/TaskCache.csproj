@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>task.ico</ApplicationIcon>
+    <Authors>Ahmed Abuelnour, Amr Kamal</Authors>
+    <Company>Personal</Company>
+    <Description>Gives you all the power for cashing tasks and retry it untill getting successful result</Description>
+    <PackageIcon>task.png</PackageIcon>
+	<Version>1.1.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="task.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\Downloads\task.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Sharpnado.TaskMonitor" Version="1.0.2" />
+  </ItemGroup>
+
+</Project>
