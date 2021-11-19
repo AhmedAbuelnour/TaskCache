@@ -15,18 +15,22 @@ namespace TaskCache
         }
         private TimeSpan InvokeForEach = TimeSpan.FromSeconds(5);
         private int NumberOfTries = 3;
-        private Action<int> CurrentTriesProgress = (e) =>
+        private Action<int> CurrentTriesProgress = (e) => {
+            Debug.WriteLine(e);
+        };
+        private Action<bool> CurrentIsSuccessProgress = (e) =>
         {
             Debug.WriteLine(e);
         };
-        public void DefaultInitializer(TimeSpan invokeForEach, int numberOfTries, Action<int> currentTriesProgress)
+        public void DefaultInitializer(TimeSpan invokeForEach, int numberOfTries, Action<int> currentTriesProgress, Action<bool> currentIsSuccessProgress)
         {
             InvokeForEach = invokeForEach;
             NumberOfTries = numberOfTries;
             CurrentTriesProgress = currentTriesProgress; 
+            CurrentIsSuccessProgress = currentIsSuccessProgress; 
         }
         private ActionScheduler Scheduler;
-        private Queue<TaskWrapper> CachingStore { get; set; }
+        private Queue<TaskWrapper> CachingStore;
         public TaskCaching()
         {
             CachingStore = new Queue<TaskWrapper>();
@@ -45,10 +49,11 @@ namespace TaskCache
             });
         }
 
-        public async Task<bool> WrapTaskAsync(TaskWrapper taskWrapper)
+        public async Task WrapTaskAsync(TaskWrapper taskWrapper)
         {
             TaskMonitor taskMonitorResult = TaskMonitor.Create(taskWrapper.WrappedTask, whenFaulted: (e) =>
             {
+                CurrentIsSuccessProgress(false);
                 if (++taskWrapper.NumberOfTries < NumberOfTries)
                 {
                     CurrentTriesProgress(taskWrapper.NumberOfTries);
@@ -62,9 +67,11 @@ namespace TaskCache
                         Scheduler.Stop();
                     }
                 }
+            }, whenSuccessfullyCompleted: (e) =>
+            {
+                CurrentIsSuccessProgress(true);
             });
             await taskMonitorResult.TaskCompleted;
-            return taskMonitorResult.IsSuccessfullyCompleted;
         }
         private TaskWrapper GetFaultedTask() => CachingStore.Dequeue();
         public void RemoveFaultedTasks() => CachingStore.Clear();
