@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskCache", "TaskCache\TaskCache.csproj", "{C883DB24-3607-4EC0-806C-97F645FC6646}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskCache", "TaskCache\TaskCache.csproj", "{C883DB24-3607-4EC0-806C-97F645FC6646}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskCachingTesting", "TaskCachingTesting\TaskCachingTesting.csproj", "{111846D8-CB71-487A-A6D4-2EBF244BCE35}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{C883DB24-3607-4EC0-806C-97F645FC6646}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C883DB24-3607-4EC0-806C-97F645FC6646}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C883DB24-3607-4EC0-806C-97F645FC6646}.Release|Any CPU.Build.0 = Release|Any CPU
+		{111846D8-CB71-487A-A6D4-2EBF244BCE35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{111846D8-CB71-487A-A6D4-2EBF244BCE35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{111846D8-CB71-487A-A6D4-2EBF244BCE35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{111846D8-CB71-487A-A6D4-2EBF244BCE35}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

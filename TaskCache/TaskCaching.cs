@@ -1,11 +1,11 @@
 ﻿using Sharpnado.Tasks;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace TaskCache
 {
-
     public class TaskCaching
     {
         public static TaskCaching Current;
@@ -13,23 +13,29 @@ namespace TaskCache
         {
             Current = new TaskCaching();
         }
-        private TimeSpan InvokeForEach { get; set; } = TimeSpan.FromSeconds(5);
-        public void SetInvokerTimeInterval(TimeSpan timeSpan)
+        private TimeSpan InvokeForEach = TimeSpan.FromSeconds(5);
+        private int NumberOfTries = 3;
+        private Action<int> CurrentTriesProgress = (e) =>
         {
-            InvokeForEach = timeSpan;
+            Debug.WriteLine(e);
+        };
+        public void DefaultInitializer(TimeSpan invokeForEach, int numberOfTries, Action<int> currentTriesProgress)
+        {
+            InvokeForEach = invokeForEach;
+            NumberOfTries = numberOfTries;
+            CurrentTriesProgress = currentTriesProgress; 
         }
         private ActionScheduler Scheduler;
-        private Queue<Func<Task>> CachingStore { get; set; }
+        private Queue<TaskWrapper> CachingStore { get; set; }
         public TaskCaching()
         {
-            CachingStore = new Queue<Func<Task>>();
+            CachingStore = new Queue<TaskWrapper>();
             TaskMonitorConfiguration.ConsiderCanceledAsFaulted = true;
             Scheduler = new ActionScheduler(InvokeForEach, async () =>
             {
-                TaskCachingResult taskResult = GetFaultedTask();
-                if (taskResult.IsSuccessfulReturn)
+                if (!IsAllSuccess)
                 {
-                    await WrapTaskAsync(taskResult.CachedTask);
+                    await WrapTaskAsync(GetFaultedTask());
                 }
                 else
                 {
@@ -39,41 +45,28 @@ namespace TaskCache
             });
         }
 
-
-        public async Task<bool> WrapTaskAsync(Func<Task> task)
+        public async Task<bool> WrapTaskAsync(TaskWrapper taskWrapper)
         {
-            TaskMonitor taskMonitorResult = TaskMonitor.Create(task, whenFaulted: (e) =>
+            TaskMonitor taskMonitorResult = TaskMonitor.Create(taskWrapper.WrappedTask, whenFaulted: (e) =>
             {
-                CachingStore.Enqueue(task);
-                if (!Scheduler.IsStarted) Scheduler.Start();
+                if (++taskWrapper.NumberOfTries < NumberOfTries)
+                {
+                    CurrentTriesProgress(taskWrapper.NumberOfTries);
+                    CachingStore.Enqueue(taskWrapper);
+                    if (!Scheduler.IsStarted) Scheduler.Start();
+                }
+                else
+                {
+                    if (IsAllSuccess)
+                    {
+                        Scheduler.Stop();
+                    }
+                }
             });
             await taskMonitorResult.TaskCompleted;
             return taskMonitorResult.IsSuccessfullyCompleted;
         }
-        public async Task<(T Result,bool IsSuccessful)> WrapTaskAsync<T>(Func<Task<T>> task)
-        {
-            TaskMonitor<T> taskMonitorResult = TaskMonitor<T>.Create(task, whenFaulted: (e) =>
-            {
-                CachingStore.Enqueue(task);
-                if (!Scheduler.IsStarted) Scheduler.Start();
-            });
-            return (await taskMonitorResult.TaskWithResult.ConfigureAwait(false), taskMonitorResult.IsSuccessfullyCompleted);
-        }
-        private TaskCachingResult GetFaultedTask()
-        {
-            if (CachingStore.TryDequeue(out Func<Task> dequeueTask))
-            {
-                return new TaskCachingResult
-                {
-                    CachedTask = dequeueTask,
-                    IsSuccessfulReturn = true
-                };
-            }
-            else
-            {
-                return new TaskCachingResult { IsSuccessfulReturn = false };
-            }
-        }
+        private TaskWrapper GetFaultedTask() => CachingStore.Dequeue();
         public void RemoveFaultedTasks() => CachingStore.Clear();
         public bool IsAllSuccess { get => CachingStore.Count == 0; }
     }
