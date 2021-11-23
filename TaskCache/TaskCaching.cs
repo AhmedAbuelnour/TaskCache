@@ -15,7 +15,8 @@ namespace TaskCache
         }
         private TimeSpan InvokeForEach = TimeSpan.FromSeconds(5);
         private int NumberOfTries = 3;
-        private Action<int> CurrentTriesProgress = (e) => {
+        private Action<int> CurrentTriesProgress = (e) =>
+        {
             Debug.WriteLine(e);
         };
         private Action<bool> CurrentIsSuccessProgress = (e) =>
@@ -26,8 +27,8 @@ namespace TaskCache
         {
             InvokeForEach = invokeForEach;
             NumberOfTries = numberOfTries;
-            CurrentTriesProgress = currentTriesProgress; 
-            CurrentIsSuccessProgress = currentIsSuccessProgress; 
+            CurrentTriesProgress = currentTriesProgress;
+            CurrentIsSuccessProgress = currentIsSuccessProgress;
         }
         private ActionScheduler Scheduler;
         private Queue<TaskWrapper> CachingStore;
@@ -51,7 +52,8 @@ namespace TaskCache
 
         public async Task WrapTaskAsync(TaskWrapper taskWrapper)
         {
-            TaskMonitor taskMonitorResult = TaskMonitor.Create(taskWrapper.WrappedTask, whenFaulted: (e) =>
+
+            var wrappedTask = taskWrapper.WrappedTask.Invoke().ContinueWith((e) =>
             {
                 CurrentIsSuccessProgress(false);
                 if (++taskWrapper.NumberOfTries < NumberOfTries)
@@ -67,11 +69,8 @@ namespace TaskCache
                         Scheduler.Stop();
                     }
                 }
-            }, whenSuccessfullyCompleted: (e) =>
-            {
-                CurrentIsSuccessProgress(true);
-            });
-            await taskMonitorResult.TaskCompleted;
+            }, TaskContinuationOptions.OnlyOnFaulted);
+            await wrappedTask;
         }
         private TaskWrapper GetFaultedTask() => CachingStore.Dequeue();
         public void RemoveFaultedTasks() => CachingStore.Clear();
